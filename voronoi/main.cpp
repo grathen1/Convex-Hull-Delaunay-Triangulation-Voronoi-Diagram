@@ -288,7 +288,7 @@ void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& tr
         // Draw the circumcircle with outline only
         sf::CircleShape circumcircle(circumradius);
         circumcircle.setOutlineThickness(1); // Set the thickness of the outline
-        circumcircle.setOutlineColor(sf::Color::Blue); // Set the color of the outline
+        circumcircle.setOutlineColor(sf::Color::Magenta); // Set the color of the outline
         circumcircle.setPosition(xCircumcenter - circumradius, yCircumcenter - circumradius); // Set position
         circumcircle.setFillColor(sf::Color::Transparent); // No fill color
         window.draw(circumcircle);
@@ -296,7 +296,6 @@ void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& tr
 }
 
 void drawEverything(sf::RenderWindow& window) {
-    window.clear();
 
     for (const auto& point : points) {
         sf::CircleShape shape(3);
@@ -309,8 +308,7 @@ void drawEverything(sf::RenderWindow& window) {
         triangle.draw(window);
     }
 
-
-    window.display();
+    drawCircumcircles(window, triangles);
 }
 
 std::vector<Point> generateRandomPoints(int count, int minX, int maxX, int minY, int maxY) {
@@ -581,14 +579,18 @@ int main() {
 
                                 window.clear();
 
+                                for (const auto& point : points) {
+                                    draw_circle(window, point.x, point.y, 3, sf::Color::Red); // Малюємо точку
+                                }
                                 // Generate the Voronoi diagram based on the Delaunay triangulation
                                 generateVoronoiDiagram(triangles, voronoiEdges);
+                                drawEverything(window);
                                 drawVoronoiDiagram(window, voronoiEdges);
 
                                 window.display(); // Display the Voronoi diagram
 
                                 // Pause to visualize
-                                sf::sleep(sf::seconds(5));
+                                sf::sleep(sf::seconds(20));
                             }
                             if (event.mouseButton.y >= 70 && event.mouseButton.y <= 120) {
                                 state = 0;
@@ -607,19 +609,23 @@ int main() {
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (event.mouseButton.x >= 10 && event.mouseButton.x <= 210) {
                             if (event.mouseButton.y >= 10 && event.mouseButton.y <= 60) {
+                                points.clear();
+                                triangles.clear();
+                                voronoiEdges.clear();
+
                                 std::vector<Point> pointList;
                                 for (const auto &point: points) {
                                     pointList.push_back({point.x, point.y});
                                 }
                                 performDelaunayTriangulation(points, triangles, window);
                                 std::cout << "Number of triangles: " << triangles.size() << std::endl;
-                                // Now draw everything on the screen
-
-                                drawEverything(window);
+                           
+                                window.clear();
                                 generateVoronoiDiagram(triangles, voronoiEdges);
-                                drawVoronoiDiagram(window, voronoiEdges);// This will now draw the updated triangles as well
-                                // Pause to visualize
-                                sf::sleep(sf::seconds(5));
+                                drawEverything(window);
+                                drawVoronoiDiagram(window, voronoiEdges);
+
+                                sf::sleep(sf::seconds(20));
                             }
                             if (event.mouseButton.y >= 70 && event.mouseButton.y <= 120) {
                                 state = 0;
