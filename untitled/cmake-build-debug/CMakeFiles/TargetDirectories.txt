@@ -1,3 +1,0 @@
-D:/Завантаження/projects/untitled/cmake-build-debug/CMakeFiles/untitled.dir
-D:/Завантаження/projects/untitled/cmake-build-debug/CMakeFiles/edit_cache.dir
-D:/Завантаження/projects/untitled/cmake-build-debug/CMakeFiles/rebuild_cache.dir
