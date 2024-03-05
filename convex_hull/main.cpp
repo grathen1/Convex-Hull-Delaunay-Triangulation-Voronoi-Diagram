@@ -40,20 +40,6 @@ void drawPointsAndHull(sf::RenderWindow& window, const std::vector<Point>& point
     std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Control the speed of the animation
 }
 
-std::vector<Point> generateRandomPoints(int count, int minX, int maxX, int minY, int maxY) {
-    std::vector<Point> points(count);
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> distribX(minX, maxX);
-    std::uniform_real_distribution<> distribY(minY, maxY);
-
-    for (int i = 0; i < count; ++i) {
-        points[i].x = distribX(gen);
-        points[i].y = distribY(gen);
-    }
-    return points;
-}
-
 std::vector<Point> convexHull(std::vector<Point>& points, sf::RenderWindow& window) {
     int n = points.size(), k = 0;
     if (n <= 3) return points;
@@ -97,6 +83,20 @@ std::vector<Point> readPointsFromFile(const std::string& filename) {
         points.push_back(Point{x, y});
     }
 
+    return points;
+}
+
+std::vector<Point> generateRandomPoints(int count, int minX, int maxX, int minY, int maxY) {
+    std::vector<Point> points(count);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> distribX(minX, maxX);
+    std::uniform_real_distribution<> distribY(minY, maxY);
+
+    for (int i = 0; i < count; ++i) {
+        points[i].x = distribX(gen);
+        points[i].y = distribY(gen);
+    }
     return points;
 }
 
