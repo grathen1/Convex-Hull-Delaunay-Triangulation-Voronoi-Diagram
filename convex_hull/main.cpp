@@ -302,11 +302,9 @@ int main() {
                     inputText.setString(inputString); // Update the displayed string
                 }
             }
-            // Confirm button click handling
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
                 if (confirmButton.getGlobalBounds().contains(mousePos)) {
-                    // Confirm button logic here
                     numOfPoints = std::stoi(inputText.getString().toAnsiString()); // Update numOfPoints
                 }}
             if (event.type == sf::Event::MouseButtonPressed) {
