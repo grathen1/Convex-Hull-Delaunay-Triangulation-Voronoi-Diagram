@@ -10,6 +10,95 @@
 int state = 0;
 
 std::vector<sf::Vector2f> points;
+struct Point {
+    float x, y;
+    bool operator <(const Point& p) const {
+        return x < p.x || (x == p.x && y < p.y);
+    }
+};
+
+float cross(const Point &O, const Point &A, const Point &B) {
+    return (A.x - O.x) * (B.y - O.y) - (A.y - O.y) * (B.x - O.x);
+}
+
+void drawPointsAndHull(sf::RenderWindow& window, const std::vector<Point>& points, const std::vector<Point>& hull) {
+    window.clear();
+    for (const auto& point : points) {
+        sf::CircleShape shape(5);
+        shape.setPosition(point.x - 2.5, point.y - 2.5);
+        window.draw(shape);
+    }
+    for (size_t i = 0; i < hull.size(); ++i) {
+        sf::Vertex line[] =
+                {
+                        sf::Vertex(sf::Vector2f(hull[i].x, hull[i].y)),
+                        sf::Vertex(sf::Vector2f(hull[(i + 1) % hull.size()].x, hull[(i + 1) % hull.size()].y))
+                };
+        window.draw(line, 2, sf::Lines);
+    }
+    window.display();
+    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Control the speed of the animation
+}
+
+std::vector<Point> generateRandomPoints(int count, int minX, int maxX, int minY, int maxY) {
+    std::vector<Point> points(count);
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<> distribX(minX, maxX);
+    std::uniform_real_distribution<> distribY(minY, maxY);
+
+    for (int i = 0; i < count; ++i) {
+        points[i].x = distribX(gen);
+        points[i].y = distribY(gen);
+    }
+    return points;
+}
+
+std::vector<Point> convexHull(std::vector<Point>& points, sf::RenderWindow& window) {
+    int n = points.size(), k = 0;
+    if (n <= 3) return points;
+
+    std::vector<Point> H(2 * n), sortedPoints(points);
+    sort(sortedPoints.begin(), sortedPoints.end());
+
+    for (int i = 0; i < n; ++i) {
+        while (k >= 2 && cross(H[k - 2], H[k - 1], sortedPoints[i]) <= 0) {
+            k--;
+            drawPointsAndHull(window, points, std::vector<Point>(H.begin(), H.begin() + k));
+        }
+        H[k++] = sortedPoints[i];
+    }
+
+    for (int i = n - 1, t = k + 1; i >= 0; --i) {
+        while (k >= t && cross(H[k - 2], H[k - 1], sortedPoints[i]) <= 0) {
+            k--;
+            drawPointsAndHull(window, points, std::vector<Point>(H.begin(), H.begin() + k));
+        }
+        H[k++] = sortedPoints[i];
+    }
+
+    H.resize(k - 1);
+    return H;
+}
+
+void draw_circle(sf::RenderWindow& window, float x, float y, float radius, sf::Color color) {
+    sf::CircleShape circle(radius);
+    circle.setFillColor(color);
+    circle.setPosition(x - radius, y - radius);
+    window.draw(circle);
+}
+
+std::vector<Point> readPointsFromFile(const std::string& filename) {
+    std::vector<Point> points;
+    std::ifstream file(filename);
+    float x, y;
+
+    while (file >> x >> y) {
+        points.push_back(Point{x, y});
+    }
+
+    return points;
+}
 
 void draw_menu(sf::RenderWindow& window, bool is_main, sf::Text& inputText, sf::RectangleShape& inputBox, sf::Text& confirmText, sf::RectangleShape& confirmButton) {
     sf::Font font;
@@ -159,102 +248,12 @@ void draw_menu(sf::RenderWindow& window, bool is_main, sf::Text& inputText, sf::
     }
 }
 
-struct Point {
-    float x, y;
-    bool operator <(const Point& p) const {
-        return x < p.x || (x == p.x && y < p.y);
-    }
-};
-
-float cross(const Point &O, const Point &A, const Point &B) {
-    return (A.x - O.x) * (B.y - O.y) - (A.y - O.y) * (B.x - O.x);
-}
-
-void drawPointsAndHull(sf::RenderWindow& window, const std::vector<Point>& points, const std::vector<Point>& hull) {
-    window.clear();
-    for (const auto& point : points) {
-        sf::CircleShape shape(5);
-        shape.setPosition(point.x - 2.5, point.y - 2.5);
-        window.draw(shape);
-    }
-    for (size_t i = 0; i < hull.size(); ++i) {
-        sf::Vertex line[] =
-                {
-                        sf::Vertex(sf::Vector2f(hull[i].x, hull[i].y)),
-                        sf::Vertex(sf::Vector2f(hull[(i + 1) % hull.size()].x, hull[(i + 1) % hull.size()].y))
-                };
-        window.draw(line, 2, sf::Lines);
-    }
-    window.display();
-    std::this_thread::sleep_for(std::chrono::milliseconds(200)); // Control the speed of the animation
-}
-
-std::vector<Point> generateRandomPoints(int count, int minX, int maxX, int minY, int maxY) {
-    std::vector<Point> points(count);
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<> distribX(minX, maxX);
-    std::uniform_real_distribution<> distribY(minY, maxY);
-
-    for (int i = 0; i < count; ++i) {
-        points[i].x = distribX(gen);
-        points[i].y = distribY(gen);
-    }
-    return points;
-}
-
-std::vector<Point> convexHull(std::vector<Point>& points, sf::RenderWindow& window) {
-    int n = points.size(), k = 0;
-    if (n <= 3) return points;
-
-    std::vector<Point> H(2 * n), sortedPoints(points);
-    sort(sortedPoints.begin(), sortedPoints.end());
-
-    for (int i = 0; i < n; ++i) {
-        while (k >= 2 && cross(H[k - 2], H[k - 1], sortedPoints[i]) <= 0) {
-            k--;
-            drawPointsAndHull(window, points, std::vector<Point>(H.begin(), H.begin() + k));
-        }
-        H[k++] = sortedPoints[i];
-    }
-
-    for (int i = n - 1, t = k + 1; i >= 0; --i) {
-        while (k >= t && cross(H[k - 2], H[k - 1], sortedPoints[i]) <= 0) {
-            k--;
-            drawPointsAndHull(window, points, std::vector<Point>(H.begin(), H.begin() + k));
-        }
-        H[k++] = sortedPoints[i];
-    }
-
-    H.resize(k - 1);
-    return H;
-}
-
-void draw_circle(sf::RenderWindow& window, float x, float y, float radius, sf::Color color) {
-    sf::CircleShape circle(radius);
-    circle.setFillColor(color);
-    circle.setPosition(x - radius, y - radius);
-    window.draw(circle);
-}
-
-std::vector<Point> readPointsFromFile(const std::string& filename) {
-    std::vector<Point> points;
-    std::ifstream file(filename);
-    float x, y;
-
-    while (file >> x >> y) {
-        points.push_back(Point{x, y});
-    }
-
-    return points;
-}
-
 int main() {
     sf::Font font;
     if (!font.loadFromFile("C:/Users/ACER/downloads/BrownieStencil.ttf")) {
         std::cerr << "Error loading font\n";
     }
-    sf::RenderWindow window(sf::VideoMode(920, 800), "Demo");
+    sf::RenderWindow window(sf::VideoMode(920, 800), "Convex Hull");
     int numOfPoints = 10;
     std::string inputString = "10";  // default
 
