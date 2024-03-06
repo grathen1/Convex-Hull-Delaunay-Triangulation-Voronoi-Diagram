@@ -48,7 +48,6 @@ struct Triangle {
         return thisPoints == otherPoints;
     }
 
-
     void draw(sf::RenderWindow& window) const {
         sf::ConvexShape triangle;
         triangle.setPointCount(3);
@@ -73,7 +72,6 @@ Point calculateCircumcenter(Point a, Point b, Point c) {
     double uy = ((a.x * a.x + a.y * a.y) * (c.x - b.x) + (b.x * b.x + b.y * b.y) * (a.x - c.x) + (c.x * c.x + c.y * c.y) * (b.x - a.x)) / d;
     return Point(ux, uy);
 }
-
 
 double determinant(const Point& A, const Point& B, const Point& C, const Point& P) {
     double ax = A.x - P.x;
@@ -115,27 +113,20 @@ bool edgeCompare(const std::pair<Point, Point>& a, const std::pair<Point, Point>
 void removeDuplicateEdges(std::vector<std::pair<Point, Point>>& edges) {
     std::sort(edges.begin(), edges.end(), edgeCompare);
 
-    // Unique requires a sorted vector and removes consecutive duplicate edges.
-    // Since the edgeCompare sorts the edges regardless of their direction (i.e., (a, b) == (b, a)),
-    // consecutive edges that are the same will be next to each other.
     auto it = std::unique(edges.begin(), edges.end(),
                           [](const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
                               return a.first == b.first && a.second == b.second;
                           });
     edges.erase(it, edges.end());
 
-    // Edge pairs that consist of the same points but in reversed order are still considered duplicates.
-    // The following loop removes these by finding non-unique pairs (a, b) and (b, a).
     it = std::adjacent_find(edges.begin(), edges.end(),
                             [](const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
                                 return (a.first == b.second && a.second == b.first);
                             });
     while (it != edges.end()) {
-        // Erase the current and next edge since they are duplicates.
         it = edges.erase(it);
         it = edges.erase(it);
 
-        // Find the next pair of duplicate edges.
         it = std::adjacent_find(it, edges.end(),
                                 [](const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
                                     return (a.first == b.second && a.second == b.first);
@@ -146,7 +137,6 @@ void removeDuplicateEdges(std::vector<std::pair<Point, Point>>& edges) {
 void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triangle>& triangles, sf::RenderWindow& window) {
     triangles.clear();
     if (points.size() < 3) return;
-
 
     double minX = points[0].x;
     double minY = points[0].y;
@@ -174,8 +164,6 @@ void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triang
         std::vector<Triangle> badTriangles;
         std::vector<std::pair<Point, Point>> polygonEdges;
 
-
-        // Find all triangles that are no longer valid due to the insertion
         for (const auto& triangle : triangles) {
             if (isInsideCircumcircle(triangle.a, triangle.b, triangle.c, point)) {
                 badTriangles.push_back(triangle);
@@ -187,18 +175,14 @@ void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triang
             }
         }
 
-        // Remove them from the triangles array
         triangles.erase(std::remove_if(triangles.begin(), triangles.end(),
                                        [&](const Triangle& t) {
                                            return std::find(badTriangles.begin(), badTriangles.end(), t) != badTriangles.end();
                                        }),
                         triangles.end());
 
-
-        // Remove duplicate edges
         removeDuplicateEdges(polygonEdges);
 
-        // Re-triangulate the polygonal hole
         for (const auto& edge : polygonEdges) {
             Triangle newTriangle(edge.first, edge.second, point);
             if (std::find(triangles.begin(), triangles.end(), newTriangle) == triangles.end()) {
@@ -217,7 +201,6 @@ void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triang
 
 void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& triangles) {
     for (const auto& triangle : triangles) {
-        // Calculate the circumcenter and radius of the circumcircle
         double xa = triangle.a.x;
         double ya = triangle.a.y;
         double xb = triangle.b.x;
@@ -233,12 +216,11 @@ void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& tr
         double circumradius = sqrt((xa - xCircumcenter) * (xa - xCircumcenter) +
                                    (ya - yCircumcenter) * (ya - yCircumcenter));
 
-        // Draw the circumcircle with outline only
         sf::CircleShape circumcircle(circumradius);
-        circumcircle.setOutlineThickness(1); // Set the thickness of the outline
-        circumcircle.setOutlineColor(sf::Color::Blue); // Set the color of the outline
-        circumcircle.setPosition(xCircumcenter - circumradius, yCircumcenter - circumradius); // Set position
-        circumcircle.setFillColor(sf::Color::Transparent); // No fill color
+        circumcircle.setOutlineThickness(1); 
+        circumcircle.setOutlineColor(sf::Color::Blue); 
+        circumcircle.setPosition(xCircumcenter - circumradius, yCircumcenter - circumradius);
+        circumcircle.setFillColor(sf::Color::Transparent); 
         window.draw(circumcircle);
     }
 }
@@ -256,8 +238,7 @@ void drawEverything(sf::RenderWindow& window) {
         triangle.draw(window);
     }
 
-
-//    drawCircumcircles(window, triangles);
+    drawCircumcircles(window, triangles);
 }
 
 void drawVoronoiDiagram(sf::RenderWindow& window,  const std::vector<Edge>& voronoiEdges) {
@@ -292,16 +273,13 @@ void generateVoronoiDiagram(const std::vector<Triangle>& triangles, std::vector<
             auto sortedEdge = (edge.first < edge.second) ? edge : std::make_pair(edge.second, edge.first);
             auto it = edgeToCircumcenters.find(sortedEdge);
             if (it != edgeToCircumcenters.end()) {
-                // Second triangle sharing the edge found, add Voronoi edge
                 voronoiEdges.push_back(Edge(it->second.first, circumcenter));
                 it->second.second = true; // Mark this edge as completed
 
-                // Оновлення вікна з кожним новим ребром
-                drawEverything(window); // Малюємо основні елементи: точки, трикутники
-                drawVoronoiDiagram(window, voronoiEdges); // Малюємо ребра Вороног
-                sf::sleep(sf::milliseconds(500)); // Додаємо невелику затримку для анімації
+                drawEverything(window); 
+                drawVoronoiDiagram(window, voronoiEdges); 
+                sf::sleep(sf::milliseconds(500)); 
             } else {
-                // First triangle for this edge
                 edgeToCircumcenters[sortedEdge] = std::make_pair(circumcenter, false);
             }
         }
@@ -629,7 +607,6 @@ int main() {
                         }
                     }
                 }else if (state == 3){
-
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (event.mouseButton.x >= 10 && event.mouseButton.x <= 210) {
                             if (event.mouseButton.y >= 10 && event.mouseButton.y <= 60) {
