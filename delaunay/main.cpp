@@ -40,7 +40,6 @@ struct Triangle {
         return thisPoints == otherPoints;
     }
 
-
     void draw(sf::RenderWindow& window) const {
         sf::ConvexShape triangle;
         triangle.setPointCount(3);
@@ -99,22 +98,19 @@ void removeDuplicateEdges(std::vector<std::pair<Point, Point>>& edges) {
     std::sort(edges.begin(), edges.end(), edgeCompare);
 
     // Unique requires a sorted vector and removes consecutive duplicate edges.
-    // Since the edgeCompare sorts the edges regardless of their direction (i.e., (a, b) == (b, a)),
-    // consecutive edges that are the same will be next to each other.
+    // Since the edgeCompare sorts the edges regardless of their direction (i.e., (a, b) == (b, a))
     auto it = std::unique(edges.begin(), edges.end(),
                           [](const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
                               return a.first == b.first && a.second == b.second;
                           });
     edges.erase(it, edges.end());
 
-    // Edge pairs that consist of the same points but in reversed order are still considered duplicates.
     // The following loop removes these by finding non-unique pairs (a, b) and (b, a).
     it = std::adjacent_find(edges.begin(), edges.end(),
                             [](const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
                                 return (a.first == b.second && a.second == b.first);
                             });
     while (it != edges.end()) {
-        // Erase the current and next edge since they are duplicates.
         it = edges.erase(it);
         it = edges.erase(it);
 
@@ -135,7 +131,6 @@ void draw_circle(sf::RenderWindow& window, float x, float y, float radius, sf::C
 
 void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& triangles) {
     for (const auto& triangle : triangles) {
-        // Calculate the circumcenter and radius of the circumcircle
         double xa = triangle.a.x;
         double ya = triangle.a.y;
         double xb = triangle.b.x;
@@ -151,39 +146,33 @@ void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& tr
         double circumradius = sqrt((xa - xCircumcenter) * (xa - xCircumcenter) +
                                    (ya - yCircumcenter) * (ya - yCircumcenter));
 
-        // Draw the circumcircle with outline only
         sf::CircleShape circumcircle(circumradius);
-        circumcircle.setOutlineThickness(1); // Set the thickness of the outline
-        circumcircle.setOutlineColor(sf::Color::Blue); // Set the color of the outline
-        circumcircle.setPosition(xCircumcenter - circumradius, yCircumcenter - circumradius); // Set position
-        circumcircle.setFillColor(sf::Color::Transparent); // No fill color
+        circumcircle.setOutlineThickness(1); 
+        circumcircle.setOutlineColor(sf::Color::Blue);
+        circumcircle.setPosition(xCircumcenter - circumradius, yCircumcenter - circumradius); 
+        circumcircle.setFillColor(sf::Color::Transparent);
         window.draw(circumcircle);
     }
 }
 
 void drawEverything(sf::RenderWindow& window) {
     window.clear();
-
     for (const auto& point : points) {
         sf::CircleShape shape(3);
         shape.setPosition(point.x - 1.5f, point.y - 1.5f);
         shape.setFillColor(sf::Color::Red);
         window.draw(shape);
     }
-
     for (const auto& triangle : triangles) {
         triangle.draw(window);
     }
-
     drawCircumcircles(window, triangles);
-
     window.display();
 }
 
 void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triangle>& triangles, sf::RenderWindow& window) {
     triangles.clear();
     if (points.size() < 3) return;
-
 
     double minX = points[0].x;
     double minY = points[0].y;
@@ -211,55 +200,48 @@ void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triang
         std::vector<Triangle> badTriangles;
         std::vector<std::pair<Point, Point>> polygonEdges;
 
-        drawEverything(window); // Show the current state before adding the new point
-        draw_circle(window, point.x, point.y, 3, sf::Color::Yellow); // Highlight the new point
+        drawEverything(window); 
+        draw_circle(window, point.x, point.y, 3, sf::Color::Yellow); 
         window.display();
         sf::sleep(sf::milliseconds(500));
 
-        // Find all triangles that are no longer valid due to the insertion
         for (const auto& triangle : triangles) {
             if (isInsideCircumcircle(triangle.a, triangle.b, triangle.c, point)) {
                 badTriangles.push_back(triangle);
-
-                // Push the edges onto the polygonEdges array
                 polygonEdges.push_back(std::make_pair(triangle.a, triangle.b));
                 polygonEdges.push_back(std::make_pair(triangle.b, triangle.c));
                 polygonEdges.push_back(std::make_pair(triangle.c, triangle.a));
             }
         }
 
-        // Remove them from the triangles array
         triangles.erase(std::remove_if(triangles.begin(), triangles.end(),
                                        [&](const Triangle& t) {
                                            return std::find(badTriangles.begin(), badTriangles.end(), t) != badTriangles.end();
                                        }),
                         triangles.end());
 
-        drawEverything(window); // Update visualization to show removal of bad triangles
+        drawEverything(window);
         sf::sleep(sf::milliseconds(500));
 
-        // Remove duplicate edges
         removeDuplicateEdges(polygonEdges);
 
-        // Re-triangulate the polygonal hole
         for (const auto& edge : polygonEdges) {
             Triangle newTriangle(edge.first, edge.second, point);
             if (std::find(triangles.begin(), triangles.end(), newTriangle) == triangles.end()) {
                 triangles.push_back(newTriangle);
             }
         }
-        drawEverything(window); // Show the updated triangulation with the new triangles
+        drawEverything(window); 
         window.display();
         sf::sleep(sf::milliseconds(500));
     }
 
-    // Remove triangles with vertices of the super-triangle
     triangles.erase(std::remove_if(triangles.begin(), triangles.end(),
                                    [&](const Triangle& t) {
                                        return t.containsVertex(p1) || t.containsVertex(p2) || t.containsVertex(p3);
                                    }),
                     triangles.end());
-    drawEverything(window); // Visualize the final triangulation without the super-triangle
+    drawEverything(window);
     window.display();
 }
 
@@ -281,11 +263,9 @@ std::vector<Point> readPointsFromFile(const std::string& filename) {
     std::vector<Point> points;
     std::ifstream file(filename);
     float x, y;
-
     while (file >> x >> y) {
         points.push_back(Point{x, y});
     }
-
     return points;
 }
 
@@ -524,11 +504,7 @@ int main() {
                                 std::vector<Point> randomPoints = generateRandomPoints(numOfPoints, 0, window_width, 0, window_height);
                                 points = randomPoints;
                                 performDelaunayTriangulation(points, triangles, window);
-                                std::cout << "Number of triangles: " << triangles.size() << std::endl;
-                                // Now draw everything on the screen
                                 drawEverything(window);
-                               // This will now draw the updated triangles as well
-                                // Pause to visualize
                                 sf::sleep(sf::seconds(5));
                             }
                             if (event.mouseButton.y >= 70 && event.mouseButton.y <= 120) {
@@ -553,11 +529,8 @@ int main() {
                                     pointList.push_back({point.x, point.y});
                                 }
                                 performDelaunayTriangulation(points, triangles, window);
-                                std::cout << "Number of triangles: " << triangles.size() << std::endl;
-                                // Now draw everything on the screen
                                 window.clear();
-                                drawEverything(window); // This will now draw the updated triangles as well
-                                // Pause to visualize
+                                drawEverything(window);
                                 sf::sleep(sf::seconds(5));
                             }
                             if (event.mouseButton.y >= 70 && event.mouseButton.y <= 120) {
