@@ -215,39 +215,6 @@ void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triang
                     triangles.end());
 }
 
-void generateVoronoiDiagram(const std::vector<Triangle>& triangles, std::vector<Edge>& voronoiEdges) {
-    std::map<std::pair<Point, Point>, std::pair<Point, bool>> edgeToCircumcenters;
-
-    for (const auto& tri : triangles) { // Changed 'triangle' to 'tri' to avoid shadowing
-        Point circumcenter = calculateCircumcenter(tri.a, tri.b, tri.c);
-
-        // For each edge of the triangle, store the circumcenter. If an edge is shared between two triangles...
-        std::pair<Point, Point> edges[3] = {
-                std::make_pair(tri.a, tri.b),
-                std::make_pair(tri.b, tri.c),
-                std::make_pair(tri.c, tri.a)
-        };
-
-        for (const auto& edge : edges) {
-            // Check if the edge is in the correct order, if not, swap it
-            auto sortedEdge = (edge.first < edge.second) ? edge : std::make_pair(edge.second, edge.first);
-            auto it = edgeToCircumcenters.find(sortedEdge);
-            if (it != edgeToCircumcenters.end()) {
-                // Second triangle sharing the edge found, add Voronoi edge
-                voronoiEdges.push_back(Edge(it->second.first, circumcenter));
-                it->second.second = true; // Mark this edge as completed
-            } else {
-                // First triangle for this edge
-                edgeToCircumcenters[sortedEdge] = std::make_pair(circumcenter, false);
-            }
-        }
-    }
-
-    // Handle edges that are part of only one triangle (if necessary for your visualization)
-    // This part is not shown for brevity.
-}
-
-
 void drawVoronoiDiagram(sf::RenderWindow& window,  const std::vector<Edge>& voronoiEdges) {
     for (const auto& edge : voronoiEdges) {
         sf::Vertex line[] =
@@ -258,13 +225,6 @@ void drawVoronoiDiagram(sf::RenderWindow& window,  const std::vector<Edge>& voro
 
         window.draw(line, 2, sf::Lines);
     }
-}
-
-void draw_circle(sf::RenderWindow& window, float x, float y, float radius, sf::Color color) {
-    sf::CircleShape circle(radius);
-    circle.setFillColor(color);
-    circle.setPosition(x - radius, y - radius);
-    window.draw(circle);
 }
 
 void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& triangles) {
@@ -309,6 +269,46 @@ void drawEverything(sf::RenderWindow& window) {
     }
 
     drawCircumcircles(window, triangles);
+}
+
+void generateVoronoiDiagram(const std::vector<Triangle>& triangles, std::vector<Edge>& voronoiEdges, sf::RenderWindow& window) {
+    std::map<std::pair<Point, Point>, std::pair<Point, bool>> edgeToCircumcenters;
+
+    for (const auto& tri : triangles) {
+        Point circumcenter = calculateCircumcenter(tri.a, tri.b, tri.c);
+
+        std::pair<Point, Point> edges[3] = {
+                std::make_pair(tri.a, tri.b),
+                std::make_pair(tri.b, tri.c),
+                std::make_pair(tri.c, tri.a)
+        };
+
+        for (const auto& edge : edges) {
+            auto sortedEdge = (edge.first < edge.second) ? edge : std::make_pair(edge.second, edge.first);
+            auto it = edgeToCircumcenters.find(sortedEdge);
+            if (it != edgeToCircumcenters.end()) {
+                // Second triangle sharing the edge found, add Voronoi edge
+                voronoiEdges.push_back(Edge(it->second.first, circumcenter));
+                it->second.second = true; // Mark this edge as completed
+
+                // Оновлення вікна з кожним новим ребром
+                drawEverything(window); // Малюємо основні елементи: точки, трикутники
+                drawVoronoiDiagram(window, voronoiEdges); // Малюємо ребра Вороного
+                window.display();
+                sf::sleep(sf::milliseconds(100)); // Додаємо невелику затримку для анімації
+            } else {
+                // First triangle for this edge
+                edgeToCircumcenters[sortedEdge] = std::make_pair(circumcenter, false);
+            }
+        }
+    }
+}
+
+void draw_circle(sf::RenderWindow& window, float x, float y, float radius, sf::Color color) {
+    sf::CircleShape circle(radius);
+    circle.setFillColor(color);
+    circle.setPosition(x - radius, y - radius);
+    window.draw(circle);
 }
 
 std::vector<Point> generateRandomPoints(int count, int minX, int maxX, int minY, int maxY) {
@@ -577,7 +577,7 @@ int main() {
                                 for (const auto& point : points) {
                                     draw_circle(window, point.x, point.y, 3, sf::Color::Red); // Малюємо точку
                                 }
-                                generateVoronoiDiagram(triangles, voronoiEdges);
+                                generateVoronoiDiagram(triangles, voronoiEdges, window);
                                 drawEverything(window);
                                 drawVoronoiDiagram(window, voronoiEdges);
                                 window.display();
@@ -608,7 +608,7 @@ int main() {
                                 voronoiEdges.clear();
                                 window.clear();
                                 performDelaunayTriangulation(points, triangles, window);
-                                generateVoronoiDiagram(triangles, voronoiEdges);
+                                generateVoronoiDiagram(triangles, voronoiEdges, window);
                                 drawEverything(window);
                                 drawVoronoiDiagram(window, voronoiEdges);
                                 window.display();
@@ -636,7 +636,7 @@ int main() {
                                 window.clear();
                                 if (!points.empty()) {
                                     performDelaunayTriangulation(points, triangles, window);
-                                    generateVoronoiDiagram(triangles, voronoiEdges);
+                                    generateVoronoiDiagram(triangles, voronoiEdges, window);
                                     drawEverything(window);
                                     drawVoronoiDiagram(window, voronoiEdges);
                                     window.display();
