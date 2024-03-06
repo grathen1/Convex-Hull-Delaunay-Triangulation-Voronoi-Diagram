@@ -507,6 +507,7 @@ int main() {
                                 state = 1;
                             } else if (event.mouseButton.x >= 250 && event.mouseButton.x <= 450) {
                                 state = 2;
+                                points.clear();
                             } else if (event.mouseButton.x >= 470 && event.mouseButton.x <= 670) {
                                 state = 3;
                             } else if (event.mouseButton.x >= 690 && event.mouseButton.x <= 890) {
@@ -518,7 +519,6 @@ int main() {
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (event.mouseButton.x >= 10 && event.mouseButton.x <= 210) {
                             if (event.mouseButton.y >= 10 && event.mouseButton.y <= 60) {
-
                                 points.clear();
                                 triangles.clear();
                                 std::vector<Point> randomPoints = generateRandomPoints(numOfPoints, 0, window_width, 0, window_height);
@@ -526,9 +526,10 @@ int main() {
                                 performDelaunayTriangulation(points, triangles, window);
                                 std::cout << "Number of triangles: " << triangles.size() << std::endl;
                                 // Now draw everything on the screen
-                                drawEverything(window); // This will now draw the updated triangles as well
+                                drawEverything(window);
+                               // This will now draw the updated triangles as well
                                 // Pause to visualize
-                                sf::sleep(sf::seconds(10));
+                                sf::sleep(sf::seconds(5));
                             }
                             if (event.mouseButton.y >= 70 && event.mouseButton.y <= 120) {
                                 state = 0;
@@ -554,9 +555,10 @@ int main() {
                                 performDelaunayTriangulation(points, triangles, window);
                                 std::cout << "Number of triangles: " << triangles.size() << std::endl;
                                 // Now draw everything on the screen
+                                window.clear();
                                 drawEverything(window); // This will now draw the updated triangles as well
                                 // Pause to visualize
-                                sf::sleep(sf::seconds(10));
+                                sf::sleep(sf::seconds(5));
                             }
                             if (event.mouseButton.y >= 70 && event.mouseButton.y <= 120) {
                                 state = 0;
@@ -579,16 +581,17 @@ int main() {
                                 std::vector<Point> filePoints = readPointsFromFile(
                                         "C:/Users/ACER/downloads/points.txt");
                                 if (!filePoints.empty()) {
-
+                                    points = filePoints;
+                                    for (const auto& point : points) {
+                                        draw_circle(window, point.x, point.y, 3, sf::Color::Red);
+                                    }
+                                    performDelaunayTriangulation(points, triangles, window);
+                                    drawEverything(window);
+                                    sf::sleep(sf::seconds(5));
                                 } else {
                                     std::cerr << "Failed to read points from file or file is empty.\n";
                                 }
-                                performDelaunayTriangulation(filePoints, triangles, window);
-                                std::cout << "Number of triangles: " << triangles.size() << std::endl;
-                                // Now draw everything on the screen
-                                drawEverything(window); // This will now draw the updated triangles as well
-                                // Pause to visualize
-                                sf::sleep(sf::seconds(10));
+
                             }
                             if (event.mouseButton.y >= 70 && event.mouseButton.y <= 120) {
                                 state = 0;
