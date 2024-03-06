@@ -222,8 +222,7 @@ void draw_menu(sf::RenderWindow& window, bool is_main, sf::Text& inputText, sf::
         xText.setPosition(890 + (20 - xText.getLocalBounds().width) / 2,
                           15 + (23 - xText.getLocalBounds().height) / 2 - 10);
         window.draw(xText);
-
-
+        
     }if (!is_main && state == 2) {
         sf::RectangleShape clearButt(sf::Vector2f(200, 50));
         clearButt.setFillColor(sf::Color::Yellow);
@@ -255,14 +254,14 @@ int main() {
     }
     sf::RenderWindow window(sf::VideoMode(920, 800), "Convex Hull");
     int numOfPoints = 10;
-    std::string inputString = "10";  // default
+    std::string inputString = "10"; 
 
     sf::Text inputText;
     inputText.setFont(font);
     inputText.setCharacterSize(20);
     inputText.setFillColor(sf::Color::Black);
     inputText.setPosition(20, 133);
-    inputText.setString(std::to_string(numOfPoints)); // Значення за замовчуванням
+    inputText.setString(std::to_string(numOfPoints));
 
     sf::RectangleShape inputBox(sf::Vector2f(100, 30));
     inputBox.setFillColor(sf::Color::White);
@@ -299,13 +298,13 @@ int main() {
                         numOfPoints = 10;
                         inputString = std::to_string(numOfPoints);
                     }
-                    inputText.setString(inputString); // Update the displayed string
+                    inputText.setString(inputString);
                 }
             }
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f mousePos = static_cast<sf::Vector2f>(sf::Mouse::getPosition(window));
                 if (confirmButton.getGlobalBounds().contains(mousePos)) {
-                    numOfPoints = std::stoi(inputText.getString().toAnsiString()); // Update numOfPoints
+                    numOfPoints = std::stoi(inputText.getString().toAnsiString()); 
                 }}
             if (event.type == sf::Event::MouseButtonPressed) {
                 if (state == 0) {
@@ -367,7 +366,6 @@ int main() {
                         }
                     }
                 }else if (state == 3){
-
                     if (event.mouseButton.button == sf::Mouse::Left) {
                         if (event.mouseButton.x >= 10 && event.mouseButton.x <= 210) {
                             if (event.mouseButton.y >= 10 && event.mouseButton.y <= 60) {
