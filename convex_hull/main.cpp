@@ -10,6 +10,8 @@
 int state = 0;
 
 std::vector<sf::Vector2f> points;
+
+// creat a point with x and y coordinates
 struct Point {
     float x, y;
     bool operator <(const Point& p) const {
@@ -17,6 +19,7 @@ struct Point {
     }
 };
 
+// calculate the cross(vector) product to calculate the orientation of three points
 float cross(const Point &O, const Point &A, const Point &B) {
     return (A.x - O.x) * (B.y - O.y) - (A.y - O.y) * (B.x - O.x);
 }
@@ -41,12 +44,18 @@ void drawPointsAndHull(sf::RenderWindow& window, const std::vector<Point>& point
 }
 
 std::vector<Point> convexHull(std::vector<Point>& points, sf::RenderWindow& window) {
-    int n = points.size(), k = 0;
-    if (n <= 3) return points;
+    int n = points.size(), k = 0; // count the amount of points
+    if (n <= 3) return points; // if count of points is three, they automatically create the hull
+    
+    /* H is for saving the size of array and there are place in the memory by enlargen the array     
+    sortedPoints is for copy for points*/
+    std::vector<Point> H(2 * n), sortedPoints(points); 
+    sort(sortedPoints.begin(), sortedPoints.end()); // sort the points
 
-    std::vector<Point> H(2 * n), sortedPoints(points);
-    sort(sortedPoints.begin(), sortedPoints.end());
-
+    /* iterates over the sorted list of points, adding each point to the potential convex hull H 
+    and checking whether the last added point forms a "right" 
+    turn with the previous points (using the cross function). If so, the previous points are removed from H 
+    because they cannot be part of the convex hull. */
     for (int i = 0; i < n; ++i) {
         while (k >= 2 && cross(H[k - 2], H[k - 1], sortedPoints[i]) <= 0) {
             k--;
@@ -55,6 +64,8 @@ std::vector<Point> convexHull(std::vector<Point>& points, sf::RenderWindow& wind
         H[k++] = sortedPoints[i];
     }
 
+    /* Repeats the process in reverse for the remaining points, building the top of the convex hull. 
+    It starts from the last point and moves back to the first, again removing the points that form a "right" turn.*/
     for (int i = n - 1, t = k + 1; i >= 0; --i) {
         while (k >= t && cross(H[k - 2], H[k - 1], sortedPoints[i]) <= 0) {
             k--;
@@ -63,7 +74,7 @@ std::vector<Point> convexHull(std::vector<Point>& points, sf::RenderWindow& wind
         H[k++] = sortedPoints[i];
     }
 
-    H.resize(k - 1);
+    H.resize(k - 1); // change the size of the array and clears the unused memory and have only the points from the mode
     return H;
 }
 
