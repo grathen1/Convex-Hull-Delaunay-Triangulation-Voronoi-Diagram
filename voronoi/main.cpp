@@ -10,6 +10,7 @@
 
 int state = 0;
 
+// Define a structure to represent a point 
 struct Point {
     double x, y;
     Point() : x(0), y(0) {}
@@ -27,11 +28,14 @@ struct Point {
     }
 };
 
+
+// Define a structure to represent an edge between two points
 struct Edge {
     Point start, end;
     Edge(Point s, Point e) : start(s), end(e) {}
 };
 
+// Define a structure to represent a triangle formed by three points
 struct Triangle {
     Point a, b, c;
     Triangle(const Point& a, const Point& b, const Point& c) : a(a), b(b), c(c) {}
@@ -66,6 +70,7 @@ std::vector<Triangle> triangles;
 std::vector<Point> points; // This will store the input points
 std::vector<Edge> voronoiEdges;
 
+// Calculate the circumcenter of a triangle
 Point calculateCircumcenter(Point a, Point b, Point c) {
     double d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
     double ux = ((a.x * a.x + a.y * a.y) * (b.y - c.y) + (b.x * b.x + b.y * b.y) * (c.y - a.y) + (c.x * c.x + c.y * c.y) * (a.y - b.y)) / d;
@@ -86,12 +91,13 @@ double determinant(const Point& A, const Point& B, const Point& C, const Point& 
            (ax * ax + ay * ay) * (bx * cy - by * cx);
 }
 
-// isInsideCircumcircle function checks if point P lies inside the circumcircle of the triangle formed by points A, B, and C
+// checks if point lies inside the circumcircle of the triangle 
 bool isInsideCircumcircle(const Point& A, const Point& B, const Point& C, const Point& P) {
     double det = determinant(A, B, C, P);
     return det > 0;
 }
 
+// Check if a triangle is valid
 bool validTriangle(const Triangle& candidate, const std::vector<Point>& allPoints) {
     for (const auto& point : allPoints) {
         if (isInsideCircumcircle(candidate.a, candidate.b, candidate.c, point)) {
@@ -101,6 +107,7 @@ bool validTriangle(const Triangle& candidate, const std::vector<Point>& allPoint
     return true;
 }
 
+// Comparison function for sorting edges
 bool edgeCompare(const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
     Point a1 = a.first < a.second ? a.first : a.second;
     Point a2 = a.first < a.second ? a.second : a.first;
@@ -109,7 +116,7 @@ bool edgeCompare(const std::pair<Point, Point>& a, const std::pair<Point, Point>
     return a1 < b1 || (a1 == b1 && a2 < b2);
 }
 
-// removeDuplicateEdges function removes duplicate edges from the vector
+//removes duplicate edges from the vector
 void removeDuplicateEdges(std::vector<std::pair<Point, Point>>& edges) {
     std::sort(edges.begin(), edges.end(), edgeCompare);
 
@@ -226,7 +233,6 @@ void drawCircumcircles(sf::RenderWindow& window, const std::vector<Triangle>& tr
 }
 
 void drawEverything(sf::RenderWindow& window) {
-
     for (const auto& point : points) {
         sf::CircleShape shape(3);
         shape.setPosition(point.x - 1.5f, point.y - 1.5f);
@@ -257,34 +263,46 @@ void drawVoronoiDiagram(sf::RenderWindow& window,  const std::vector<Edge>& voro
     window.display();
 }
 
+// Generate the Voronoi diagram based on a set of Delaunay triangles
 void generateVoronoiDiagram(const std::vector<Triangle>& triangles, std::vector<Edge>& voronoiEdges, sf::RenderWindow& window) {
+    // This map will hold pairs of points (edges) and their corresponding circumcenter and completion status
     std::map<std::pair<Point, Point>, std::pair<Point, bool>> edgeToCircumcenters;
 
+    // Iterate through each Delaunay triangle
     for (const auto& tri : triangles) {
+        // Calculate the circumcenter of the current triangle
         Point circumcenter = calculateCircumcenter(tri.a, tri.b, tri.c);
 
+        // Define the edges of the triangle
         std::pair<Point, Point> edges[3] = {
                 std::make_pair(tri.a, tri.b),
                 std::make_pair(tri.b, tri.c),
                 std::make_pair(tri.c, tri.a)
         };
 
+        // Iterate through each edge of the triangle
         for (const auto& edge : edges) {
+            // Ensure the edges are sorted in a consistent order to avoid duplicates
             auto sortedEdge = (edge.first < edge.second) ? edge : std::make_pair(edge.second, edge.first);
+            // Check if this edge has already been processed
             auto it = edgeToCircumcenters.find(sortedEdge);
             if (it != edgeToCircumcenters.end()) {
+                // If the edge has been processed, connect its circumcenter with the current triangle's circumcenter
                 voronoiEdges.push_back(Edge(it->second.first, circumcenter));
-                it->second.second = true; // Mark this edge as completed
+                it->second.second = true; // Mark this edge as having both circumcenters connected
 
+                // Visualize the current state of the Voronoi diagram
                 drawEverything(window); 
                 drawVoronoiDiagram(window, voronoiEdges); 
                 sf::sleep(sf::milliseconds(500)); 
             } else {
+                // If the edge hasn't been processed yet, record its circumcenter and mark it as incomplete
                 edgeToCircumcenters[sortedEdge] = std::make_pair(circumcenter, false);
             }
         }
     }
 }
+
 
 void draw_circle(sf::RenderWindow& window, float x, float y, float radius, sf::Color color) {
     sf::CircleShape circle(radius);
