@@ -10,6 +10,7 @@
 
 int state = 0;
 
+// creat a point with x and y coordinates
 struct Point {
     double x, y;
     Point() : x(0), y(0) {}
@@ -24,6 +25,7 @@ struct Point {
     }
 };
 
+// creat a triangle with the a, b and c nodes
 struct Triangle {
     Point a, b, c;
     Triangle(const Point& a, const Point& b, const Point& c) : a(a), b(b), c(c) {}
@@ -57,6 +59,7 @@ struct Triangle {
 std::vector<Point> points;
 std::vector<Triangle> triangles;
 
+// calculate the determinant to check if the point inside the circumcircle
 double determinant(const Point& A, const Point& B, const Point& C, const Point& P) {
     double ax = A.x - P.x;
     double ay = A.y - P.y;
@@ -70,12 +73,13 @@ double determinant(const Point& A, const Point& B, const Point& C, const Point& 
            (ax * ax + ay * ay) * (bx * cy - by * cx);
 }
 
-// isInsideCircumcircle function checks if point P lies inside the circumcircle of the triangle formed by points A, B, and C
+//  checks if point P lies inside the circumcircle of the triangle formed by points A, B, and C
 bool isInsideCircumcircle(const Point& A, const Point& B, const Point& C, const Point& P) {
     double det = determinant(A, B, C, P);
     return det > 0;
 }
 
+// check if the triandle is valid and doesn`t contain any point
 bool validTriangle(const Triangle& candidate, const std::vector<Point>& allPoints) {
     for (const auto& point : allPoints) {
         if (isInsideCircumcircle(candidate.a, candidate.b, candidate.c, point)) {
@@ -85,6 +89,7 @@ bool validTriangle(const Triangle& candidate, const std::vector<Point>& allPoint
     return true;
 }
 
+// sort edges to find duplicate and delete them further
 bool edgeCompare(const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
     Point a1 = a.first < a.second ? a.first : a.second;
     Point a2 = a.first < a.second ? a.second : a.first;
@@ -98,7 +103,7 @@ void removeDuplicateEdges(std::vector<std::pair<Point, Point>>& edges) {
     std::sort(edges.begin(), edges.end(), edgeCompare);
 
     // Unique requires a sorted vector and removes consecutive duplicate edges.
-    // Since the edgeCompare sorts the edges regardless of their direction (i.e., (a, b) == (b, a))
+    // Since the edgeCompare sorts the edges regardless of their direction
     auto it = std::unique(edges.begin(), edges.end(),
                           [](const std::pair<Point, Point>& a, const std::pair<Point, Point>& b) {
                               return a.first == b.first && a.second == b.second;
@@ -171,13 +176,14 @@ void drawEverything(sf::RenderWindow& window) {
 }
 
 void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triangle>& triangles, sf::RenderWindow& window) {
+    // Clear previous triangulation
     triangles.clear();
+    // Return if not enough points to form a triangle
     if (points.size() < 3) return;
 
-    double minX = points[0].x;
-    double minY = points[0].y;
-    double maxX = minX;
-    double maxY = minY;
+    // Find the bounding box of the points
+    double minX = points[0].x, minY = points[0].y;
+    double maxX = minX, maxY = minY;
     for (const auto &point: points) {
         minX = std::min(minX, point.x);
         maxX = std::max(maxX, point.x);
@@ -185,65 +191,79 @@ void performDelaunayTriangulation(std::vector<Point>& points, std::vector<Triang
         maxY = std::max(maxY, point.y);
     }
 
-    double dx = maxX - minX;
-    double dy = maxY - minY;
+    // Calculate the dimensions and the center of the bounding box
+    double dx = maxX - minX, dy = maxY - minY;
     double deltaMax = std::max(dx, dy);
-    double midx = (minX + maxX) / 2;
-    double midy = (minY + maxY) / 2;
+    double midx = (minX + maxX) / 2, midy = (minY + maxY) / 2;
 
+    // Create a super triangle that encompasses all the points
     Point p1(midx - 20 * deltaMax, midy - deltaMax);
     Point p2(midx + 20 * deltaMax, midy - deltaMax);
     Point p3(midx, midy + 20 * deltaMax);
     triangles.push_back(Triangle(p1, p2, p3));
 
+    // Main loop: iterate over each point to perform the triangulation
     for (const auto& point : points) {
-        std::vector<Triangle> badTriangles;
-        std::vector<std::pair<Point, Point>> polygonEdges;
+        std::vector<Triangle> badTriangles; // Triangles that are no longer valid
+        std::vector<std::pair<Point, Point>> polygonEdges; // Edges of the polygonal hole
 
-        drawEverything(window); 
-        draw_circle(window, point.x, point.y, 3, sf::Color::Yellow); 
+        // Visualize the process
+        drawEverything(window);
+        draw_circle(window, point.x, point.y, 3, sf::Color::Yellow);
         window.display();
         sf::sleep(sf::milliseconds(500));
 
+        // Find bad triangles that contain the point inside their circumcircle
         for (const auto& triangle : triangles) {
             if (isInsideCircumcircle(triangle.a, triangle.b, triangle.c, point)) {
                 badTriangles.push_back(triangle);
+                // Save the triangle's edges
                 polygonEdges.push_back(std::make_pair(triangle.a, triangle.b));
                 polygonEdges.push_back(std::make_pair(triangle.b, triangle.c));
                 polygonEdges.push_back(std::make_pair(triangle.c, triangle.a));
             }
         }
 
+        // Remove bad triangles from the list
         triangles.erase(std::remove_if(triangles.begin(), triangles.end(),
                                        [&](const Triangle& t) {
                                            return std::find(badTriangles.begin(), badTriangles.end(), t) != badTriangles.end();
                                        }),
                         triangles.end());
 
+        // Visualize the update
         drawEverything(window);
         sf::sleep(sf::milliseconds(500));
 
+        // Remove duplicate edges to form the boundary of the polygonal hole
         removeDuplicateEdges(polygonEdges);
 
+        // Re-triangulate the polygonal hole by connecting each edge to the new point
         for (const auto& edge : polygonEdges) {
             Triangle newTriangle(edge.first, edge.second, point);
             if (std::find(triangles.begin(), triangles.end(), newTriangle) == triangles.end()) {
                 triangles.push_back(newTriangle);
             }
         }
-        drawEverything(window); 
+
+        // Visualize the final step for the current point
+        drawEverything(window);
         window.display();
         sf::sleep(sf::milliseconds(500));
     }
 
+    // Remove the super triangle and any triangles that contain its vertices
     triangles.erase(std::remove_if(triangles.begin(), triangles.end(),
                                    [&](const Triangle& t) {
                                        return t.containsVertex(p1) || t.containsVertex(p2) || t.containsVertex(p3);
                                    }),
                     triangles.end());
+
+    // Display the final triangulation
     drawEverything(window);
     window.display();
 }
+
 
 std::vector<Point> generateRandomPoints(int count, int minX, int maxX, int minY, int maxY) {
     std::vector<Point> points(count);
