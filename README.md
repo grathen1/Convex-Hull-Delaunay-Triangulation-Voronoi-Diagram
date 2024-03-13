@@ -26,6 +26,8 @@ The algorithm is ['Bowyer-Watson algorithm'](https://en.wikipedia.org/wiki/Bowye
 4. After inserting all the points, the triangles that contain the vertices of the "super-triangle" are removed, leaving the Delaunay triangulation for the initial set of points.
 5. To determine whether a point lies within the inscribed circle of a triangle, the calculation of the determinant is used based on the coordinates of the points of the triangle and the checked point.
 
+https://github.com/grathen1/Convex-Hull-Delaunay-Triangulation-Voronoi-Diagram/assets/130998746/cc52a141-e606-4be7-a1bb-a83543a8f2f9
+
 ## [Voronoi Diagram](https://en.wikipedia.org/wiki/Voronoi_diagram)
 I used the duality property between the Delaunay triangulation and the Voronoi diagram.
 For Delaunay I used algorithm from the previous step.
@@ -34,6 +36,4 @@ For Delaunay I used algorithm from the previous step.
 2. For each pair of adjacent Delaunay triangles, the circumcenters of these triangles are connected by an edge. This edge is part of the Voronoi diagram.
 3. The circumcenters of the Delaunay triangles correspond to the vertices of the Voronoi diagram, and the adjacent circumcenters are connected by the edges of the Voronoi diagram corresponding to the perpendicular bisectors of the common edges of the triangles.
 
-
-
-
+https://github.com/grathen1/Convex-Hull-Delaunay-Triangulation-Voronoi-Diagram/assets/130998746/e1ac67d6-534d-4839-9942-6fd86e9d910e
